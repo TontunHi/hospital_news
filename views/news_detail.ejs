@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><%= news.title %></title>
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <header>
+        <div class="container d-flex justify-content-between align-items-center">
+            <a href="/" class="brand-logo">
+                <img src="/favicon.ico" alt="Hospital Logo" style="width: 32px; height: 32px;">
+                <span class="brand-text">ประชาสัมพันธ์โรงพยาบาลเถิน</span>
+            </a>
+            
+            <div class="d-flex gap-2">
+                <a href="/" class="btn btn-outline-secondary rounded-pill">
+                    <i class="bi bi-house-door-fill me-1"></i> หน้าแรก
+                </a>
+                
+                <a href="/archive" class="btn btn-outline-secondary rounded-pill">
+                    <i class="bi bi-clock-history me-1"></i> ข่าวเก่า
+                </a>
+                
+                <a href="/" class="btn btn-primary rounded-pill">
+                    <i class="bi bi-arrow-left"></i> กลับ
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container py-5" style="max-width: 900px;">
+        <div class="mb-5">
+            <span class="badge bg-primary mb-2"><%= news.category %></span>
+            <h1 class="fw-bold text-dark mb-3"><%= news.title %></h1>
+            
+            <div class="d-flex flex-column flex-md-row align-items-md-center text-muted small border-bottom pb-4 gap-md-4 gap-2">
+                <span class="d-flex align-items-center"><i class="bi bi-calendar-check me-2 text-success"></i> เริ่มแสดง: <%= moment(news.start_date).format('D MMMM YYYY') %></span>
+                <span class="d-flex align-items-center"><i class="bi bi-calendar-x me-2 text-danger"></i> หมดอายุ: <%= moment(news.end_date).format('D MMMM YYYY') %></span>
+                <span class="d-flex align-items-center"><i class="bi bi-eye me-2 text-primary"></i> <%= news.view_count %> ครั้ง</span>
+            </div>
+        </div>
+
+        <% 
+            const pdfFile = files.find(f => f.file_type === 'pdf');
+            const images = files.filter(f => f.file_type === 'image');
+            
+            let videoId = '';
+            if (news.youtube_link) {
+                const url = news.youtube_link;
+                const matchV = url.match(/[?&]v=([^&]+)/);
+                const matchYoutuBe = url.match(/youtu\.be\/([^?]+)/);
+                if (matchV) videoId = matchV[1];
+                else if (matchYoutuBe) videoId = matchYoutuBe[1];
+                else if (url.length === 11) videoId = url;
+            }
+        %>
+
+        <% if (pdfFile) { %>
+            <div class="card mb-5 border-0 bg-light">
+                <div class="card-header bg-white border-bottom-0 pt-4 px-4">
+                    <h5 class="fw-bold text-primary"><i class="bi bi-file-earmark-pdf-fill me-2"></i>เอกสารแนบ</h5>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    <div class="pdf-viewer-container border rounded bg-white shadow-sm overflow-hidden position-relative">
+                        <iframe src="/<%= pdfFile.file_path %>" style="width:100%; height:600px; border:none;"></iframe>
+                    </div>
+                    <div class="mt-3 text-center">
+                        <a href="/<%= pdfFile.file_path %>" target="_blank" class="btn btn-primary rounded-pill px-4">
+                            <i class="bi bi-download me-2"></i>ดาวน์โหลดเอกสารฉบับเต็ม
+                        </a>
+                    </div>
+                </div>
+            </div>
+        <% } %>
+
+        <% if (images && images.length > 0) { %>
+            <h4 class="fw-bold mb-3"><i class="bi bi-images me-2 text-primary"></i>ภาพกิจกรรม</h4>
+            <div class="row g-3 image-gallery mb-5">
+                <% images.forEach(file => { %>
+                    <div class="col-6 col-md-4">
+                        <img src="/<%= file.file_path %>" class="img-fluid rounded shadow-sm gallery-img" 
+                             data-bs-toggle="modal" data-bs-target="#imageModal" onclick="updateModalImage(this.src)">
+                    </div>
+                <% }); %>
+            </div>
+        <% } %>
+
+        <% if (videoId) { %>
+            <h4 class="fw-bold mb-3"><i class="bi bi-youtube me-2 text-danger"></i>วิดีโอ</h4>
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-0 overflow-hidden rounded">
+                    <div class="ratio ratio-16x9">
+                        <iframe src="https://www.youtube.com/embed/<%= videoId %>" allowfullscreen></iframe>
+                    </div>
+                </div>
+            </div>
+        <% } %>
+    </main>
+
+    <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content bg-transparent border-0">
+                <div class="modal-body text-center position-relative">
+                    <button type="button" class="btn-close btn-close-white position-absolute top-0 end-0 m-3" data-bs-dismiss="modal"></button>
+                    <img id="modalImage" src="" class="img-fluid rounded shadow-lg" style="max-height: 90vh;">
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function updateModalImage(src) { document.getElementById('modalImage').src = src; }
+    </script>
+</body>
+</html>

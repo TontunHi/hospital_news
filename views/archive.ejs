@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ข่าวประชาสัมพันธ์ย้อนหลัง | โรงพยาบาลเถิน</title>
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <header class="sticky-top">
+        <div class="container d-flex justify-content-between align-items-center">
+            <a href="/" class="brand-logo">
+                <img src="/favicon.ico" alt="Hospital Logo" style="width: 32px; height: 32px;">
+                <span class="brand-text">ประชาสัมพันธ์โรงพยาบาลเถิน</span>
+            </a>
+            
+            <div class="header-actions">
+                <a href="/" class="btn btn-outline-secondary rounded-pill px-3 me-2">
+                    <i class="bi bi-house-door-fill me-1"></i> หน้าแรก
+                </a>
+
+                <a href="/archive" class="btn btn-primary rounded-pill px-3 me-2">
+                    <i class="bi bi-clock-history me-1"></i> ข่าวเก่า
+                </a>
+
+                <% if (locals.userId) { %> 
+                    <a href="/admin/news" class="btn btn-outline-primary rounded-pill px-4">
+                        <i class="bi bi-gear-fill me-1"></i> จัดการระบบ
+                    </a>
+                <% } else { %>
+                    <a href="/admin/login" class="btn btn-outline-primary rounded-pill px-4">
+                        <i class="bi bi-person-fill me-1"></i> เจ้าหน้าที่
+                    </a>
+                <% } %>
+            </div>
+        </div>
+    </header>
+
+    <main class="container py-5">
+        <div class="text-center mb-5">
+            <div class="d-inline-flex align-items-center justify-content-center bg-secondary bg-opacity-10 rounded-circle p-3 mb-3">
+                <i class="bi bi-archive text-secondary fs-2"></i>
+            </div>
+            <h1 class="fw-bold text-dark">ข่าวประชาสัมพันธ์ย้อนหลัง</h1>
+            <p class="text-muted">รวบรวมข่าวสารและกิจกรรมที่ดำเนินการเสร็จสิ้นแล้ว</p>
+        </div>
+        
+        <% if (newsList && newsList.length > 0) { %>
+            <div class="row g-4">
+                <% newsList.forEach(news => { %>
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card h-100 opacity-75"> <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <span class="badge bg-secondary"><%= news.category %></span>
+                                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger">หมดอายุแล้ว</span>
+                                </div>
+                                <a href="/news/<%= news.id %>" class="text-decoration-none">
+                                    <h5 class="card-title text-dark fw-bold mb-3" style="min-height: 3rem; line-height: 1.5;">
+                                        <%= news.title %>
+                                    </h5>
+                                </a>
+                                <div class="d-flex flex-column text-muted small mb-3">
+                                    <span class="mb-1"><i class="bi bi-calendar-check me-2"></i>เริ่ม: <%= moment(news.start_date).format('D MMM YY') %></span>
+                                    <span class="mb-1 fw-bold text-danger"><i class="bi bi-calendar-x me-2"></i>หมดอายุ: <%= moment(news.end_date).format('D MMM YY') %></span>
+                                </div>
+                            </div>
+                            <div class="card-footer bg-white border-0 pt-0 pb-3">
+                                <a href="/news/<%= news.id %>" class="btn btn-outline-secondary w-100 rounded-pill">
+                                    ดูย้อนหลัง <i class="bi bi-arrow-right ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                <% }); %>
+            </div>
+        <% } else { %>
+            <div class="text-center py-5">
+                <i class="bi bi-inbox fs-1 text-muted mb-3 d-block"></i>
+                <p class="text-muted">ยังไม่มีรายการข่าวเก่าในระบบ</p>
+            </div>
+        <% } %>
+    </main>
+
+    <footer class="text-center py-4 mt-5 text-muted small">
+        &copy; <%= new Date().getFullYear() %> ประชาสัมพันธ์โรงพยาบาลเถิน. All rights reserved.
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
