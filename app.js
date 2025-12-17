@@ -15,6 +15,17 @@ const db = require('./db');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// 🟢 Function สร้าง Slug (รองรับภาษาไทย)
+function createSlug(title) {
+    if (!title) return '';
+    let slug = title.trim();
+    // เปลี่ยนช่องว่างและสัญลักษณ์เป็นขีดกลาง (-)
+    slug = slug.replace(/[\s\/\(\)\?]+/g, '-');
+    // ลบขีดกลางที่อยู่หัวและท้าย
+    slug = slug.replace(/^-+|-+$/g, '');
+    return slug;
+}
+
 // ----------------------------------------------------
 // 1. MIDDLEWARES
 // ----------------------------------------------------
@@ -32,9 +43,10 @@ app.use(session({
     secret: process.env.SESSION_SECRET || 'secret_key',
     resave: false,
     saveUninitialized: true,
-    cookie: { maxAge: 1000 * 60 * 60 * 24 }
+    cookie: { maxAge: 1000 * 60 * 60 * 24 } // 24 ชั่วโมง
 }));
 
+// ส่งตัวแปร Global ให้ EJS
 app.use((req, res, next) => {
     res.locals.userId = req.session.userId;
     res.locals.moment = moment;
@@ -51,7 +63,10 @@ const requireLogin = (req, res, next) => {
 // ----------------------------------------------------
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
+        // รับค่าวันที่จาก Hidden Input ที่เราแก้ไว้ใน EJS
         let rawDate = req.body.start_date;
+        
+        // Fallback: กัน Error ถ้าไม่มีค่าส่งมา
         if (!rawDate) {
             rawDate = moment().format('YYYY-MM-DD');
             console.warn('Warning: start_date missing, using current date.');
@@ -86,16 +101,15 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({ 
     storage: storage,
     fileFilter: fileFilter,
-    limits: { fileSize: 1024 * 1024 * 20 }
+    limits: { fileSize: 1024 * 1024 * 20 } // 20MB
 }).fields([
     { name: 'images', maxCount: 10 }, 
     { name: 'pdf_file', maxCount: 1 }
 ]);
 
 // ----------------------------------------------------
-// 3. ADMIN ROUTES (Login, Upload, Edit, Delete...)
+// 3. ADMIN ROUTES
 // ----------------------------------------------------
-// (ส่วนนี้เหมือนเดิม ไม่มีการเปลี่ยนแปลง Logic)
 app.get('/admin/login', (req, res) => {
     if (req.session.userId) return res.redirect('/admin/news');
     res.render('admin/login');
@@ -160,11 +174,14 @@ app.post('/admin/upload', requireLogin, upload, async (req, res) => {
 
     if (!title || !start_date || !end_date) return res.status(400).send('Missing fields.');
 
+    // สร้าง Slug
+    const slug = createSlug(title);
+
     try {
         await db.query('START TRANSACTION');
         const [result] = await db.query(
-            'INSERT INTO news (title, category, youtube_link, start_date, end_date) VALUES (?, ?, ?, ?, ?)',
-            [title, category, youtube_link, start_date, end_date]
+            'INSERT INTO news (title, slug, category, youtube_link, start_date, end_date) VALUES (?, ?, ?, ?, ?, ?)',
+            [title, slug, category, youtube_link, start_date, end_date]
         );
         const newsId = result.insertId;
 
@@ -208,11 +225,14 @@ app.post('/admin/update/:id', requireLogin, upload, async (req, res) => {
     const pdfFiles = req.files.pdf_file || [];
     const allNewFiles = [...imageFiles, ...pdfFiles];
 
+    // สร้าง Slug ใหม่ถ้าชื่อเปลี่ยน
+    const slug = createSlug(title);
+
     try {
         await db.query('START TRANSACTION');
         await db.query(
-            'UPDATE news SET title = ?, category = ?, youtube_link = ?, start_date = ?, end_date = ? WHERE id = ?',
-            [title, category, youtube_link, start_date, end_date, newsId]
+            'UPDATE news SET title = ?, slug = ?, category = ?, youtube_link = ?, start_date = ?, end_date = ? WHERE id = ?',
+            [title, slug, category, youtube_link, start_date, end_date, newsId]
         );
 
         if (files_to_delete) {
@@ -263,11 +283,16 @@ app.get('/admin/delete/:id', requireLogin, async (req, res) => {
 // ----------------------------------------------------
 
 app.get('/', async (req, res) => {
-    const categories = ['ข่าวสาร / ข่าวประชาสัมพันธ์', 'ประชุมอบรม / สัมมนา', 'ประกาศรับสมัครงาน', 'ข่าวสารความรู้'];
+    const categories = [
+    'ข่าวสารประชาสัมพันธ์',  // << แก้ตรงนี้
+    'ประชุมอบรม / สัมมนา', 
+    'ประกาศรับสมัครงาน', 
+    'ข่าวสารความรู้'
+];
     const currentCategory = req.query.category || categories[0];
     try {
         const sql = `
-            SELECT id, title, category, start_date, end_date, youtube_link, view_count 
+            SELECT id, title, slug, category, start_date, end_date, youtube_link, view_count 
             FROM news 
             WHERE category = ? 
             AND start_date <= NOW() 
@@ -281,29 +306,27 @@ app.get('/', async (req, res) => {
     }
 });
 
-// ✅ Route ใหม่: ข่าวเก่า (Archive)
+// หน้าข่าวเก่า (Archive)
 app.get('/archive', async (req, res) => {
     try {
-        // ดึงข่าวที่วันหมดอายุ (end_date) น้อยกว่าเวลาปัจจุบัน
         const sql = `
-            SELECT id, title, category, start_date, end_date, youtube_link, view_count 
+            SELECT id, title, slug, category, start_date, end_date, youtube_link, view_count 
             FROM news 
             WHERE end_date < NOW()
             ORDER BY end_date DESC
         `;
         const [newsList] = await db.query(sql);
-        
-        // ส่งไปยังหน้า archive.ejs (ซึ่งเราจะสร้างใหม่)
         res.render('archive', { newsList });
     } catch (err) {
-        console.error(err);
         res.status(500).send('Error loading archive.');
     }
 });
 
-// หน้าอ่านข่าว
-app.get('/news/:id', async (req, res) => {
+// 🟢 ส่วนที่แก้ไขเพื่อแก้ปัญหา PathError ?
+// สร้าง Handler ไว้ใช้ซ้ำ
+const newsDetailHandler = async (req, res) => {
     const newsId = req.params.id;
+    const requestedSlug = req.params.slug;
     const viewKey = `viewed_news_${newsId}`;
     
     try {
@@ -311,19 +334,24 @@ app.get('/news/:id', async (req, res) => {
         if (newsResult.length === 0) return res.status(404).send('Not Found');
         const news = newsResult[0];
         
+        // ตรวจสอบ Slug (SEO URL)
+        const correctSlug = createSlug(news.title);
+        
+        // ถ้า Slug ไม่ตรง หรือ ไม่ได้ส่งมา -> Redirect ไป URL ที่ถูก
+        if (requestedSlug !== correctSlug) {
+             return res.redirect(301, `/news/${newsId}/${correctSlug}`);
+        }
+
         const now = moment();
         const startDate = moment(news.start_date);
-        const endDate = moment(news.end_date);
         
-        // ✅ แก้ไขเงื่อนไข: 
-        // ถ้าเป็น User ทั่วไป -> ห้ามอ่านข่าวที่ "ยังไม่เริ่ม" (start_date ยังไม่ถึง)
-        // แต่ "อนุญาต" ให้อ่านข่าวที่ "หมดอายุแล้ว" (end_date ผ่านไปแล้ว) ได้
+        // Access Control: ถ้าไม่ใช่ Admin และข่าวเป็นอนาคต ห้ามดู
         if (!req.session.userId && now.isBefore(startDate)) {
             return res.status(404).send('News not yet available.');
         }
 
-        // นับวิวเฉพาะถ้าข่าว "กำลังแสดงผล" (ไม่นับวิวข่าวเก่า หรือ ข่าวล่วงหน้า)
-        if (!req.cookies[viewKey] && now.isBetween(startDate, endDate, undefined, '[]')) {
+        // นับวิว (นับได้ตลอดถ้าไม่ซ้ำ Cookie, ข่าวเก่าก็นับได้)
+        if (!req.cookies[viewKey]) {
             await db.query('UPDATE news SET view_count = view_count + 1 WHERE id = ?', [newsId]);
             res.cookie(viewKey, 'true', { maxAge: 86400000, httpOnly: true }); 
         }
@@ -331,35 +359,26 @@ app.get('/news/:id', async (req, res) => {
         const [files] = await db.query('SELECT * FROM attachments WHERE news_id = ?', [newsId]);
         res.render('news_detail', { news: news, files: files });
     } catch (err) {
+        console.error(err);
         res.status(500).send('Error loading detail');
     }
-});
-app.listen(PORT, '0.0.0.0', () => { // <<< เพิ่ม '0.0.0.0' เข้าไป
+};
+
+// แยก Route เป็น 2 บรรทัด เพื่อเลี่ยงการใช้ ? ที่มีปัญหาในบางเวอร์ชัน
+app.get('/news/:id', newsDetailHandler);
+app.get('/news/:id/:slug', newsDetailHandler);
+
+
+// START SERVER (Listen to all IPs for LAN)
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on http://localhost:${PORT}`);
-    
-    // แสดง IP Address ภายใน LAN เพื่อให้เครื่องอื่นใช้งานได้
+    // Show LAN IP
     const os = require('os');
     const ifaces = os.networkInterfaces();
-    
     Object.keys(ifaces).forEach(function (ifname) {
-      var alias = 0;
-
       ifaces[ifname].forEach(function (iface) {
-        if ('IPv4' !== iface.family || iface.internal !== false) {
-          // ข้าม IPv6 และ internal addresses (127.0.0.1)
-          return;
-        }
-
-        if (alias >= 1) {
-          // กรณีที่มีหลาย IP ใน Interface เดียว
-          console.log(`\n[EXTERNAL ACCESS - ${ifname}]`);
-          console.log(`  Access via: http://${iface.address}:${PORT}`);
-        } else {
-          // กรณีปกติ
-          console.log(`\n[EXTERNAL ACCESS - ${ifname}]`);
-          console.log(`  Access via: http://${iface.address}:${PORT}`);
-        }
-        ++alias;
+        if ('IPv4' !== iface.family || iface.internal !== false) return;
+        console.log(`[LAN ACCESS] http://${iface.address}:${PORT}`);
       });
     });
 });

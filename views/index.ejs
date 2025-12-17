@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-<header class="sticky-top">
+    <header class="sticky-top">
         <div class="container d-flex justify-content-between align-items-center">
             <a href="/" class="brand-logo">
                 <img src="/favicon.ico" alt="Hospital Logo" style="width: 32px; height: 32px;">
@@ -21,11 +21,9 @@
                 <a href="/" class="btn btn-outline-secondary rounded-pill px-3 me-2">
                     <i class="bi bi-house-door-fill me-1"></i> หน้าแรก
                 </a>
-
                 <a href="/archive" class="btn btn-outline-secondary rounded-pill px-3 me-2">
                     <i class="bi bi-clock-history me-1"></i> ข่าวเก่า
                 </a>
-
                 <% if (locals.userId) { %> 
                     <a href="/admin/news" class="btn btn-outline-primary rounded-pill px-4">
                         <i class="bi bi-gear-fill me-1"></i> จัดการระบบ
@@ -56,11 +54,6 @@
             <% }); %>
         </div>
         
-        <div class="d-flex align-items-center mb-4">
-            <div class="bg-success rounded-circle p-2 me-2 d-flex align-items-center justify-content-center" style="width: 10px; height: 10px;"></div>
-            <h2 class="h4 mb-0 fw-bold text-secondary">ข่าวสาร: <span class="text-primary"><%= currentCategory %></span></h2>
-        </div>
-        
         <% if (newsList && newsList.length > 0) { %>
             <div class="row g-4">
                 <% newsList.forEach(news => { %>
@@ -73,7 +66,7 @@
                                         <i class="bi bi-youtube text-danger fs-5" title="มีวิดีโอ"></i>
                                     <% } %>
                                 </div>
-                                <a href="/news/<%= news.id %>" class="text-decoration-none">
+                                <a href="/news/<%= news.id %>/<%= news.slug %>" class="text-decoration-none">
                                     <h5 class="card-title text-dark fw-bold mb-3" style="min-height: 3rem; line-height: 1.5;">
                                         <%= news.title %>
                                     </h5>
@@ -85,7 +78,7 @@
                                 </div>
                             </div>
                             <div class="card-footer bg-white border-0 pt-0 pb-3">
-                                <a href="/news/<%= news.id %>" class="btn btn-outline-primary w-100 rounded-pill">
+                                <a href="/news/<%= news.id %>/<%= news.slug %>" class="btn btn-outline-primary w-100 rounded-pill">
                                     อ่านเพิ่มเติม <i class="bi bi-arrow-right ms-1"></i>
                                 </a>
                             </div>

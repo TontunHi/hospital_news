@@ -9,9 +9,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="/css/style.css">
     <style>
-        /* CSS เพิ่มเติมเฉพาะหน้านี้ เพื่อรองรับชื่อไฟล์ยาว */
         .long-filename {
-            word-break: break-all; /* ตัดคำถ้ายาวเกิน */
+            word-break: break-all;
             overflow-wrap: break-word;
             display: block;
             margin-top: 5px;
@@ -25,9 +24,13 @@
                 <img src="/favicon.ico" alt="Hospital Logo" style="width: 32px; height: 32px;">
                 <span class="brand-text">ประชาสัมพันธ์โรงพยาบาลเถิน</span>
             </a>
+            
             <div class="d-flex gap-2">
+                <a href="/" class="btn btn-outline-secondary rounded-pill">
+                    <i class="bi bi-house-door-fill me-1"></i> หน้าแรก
+                </a>
                 <a href="/archive" class="btn btn-outline-secondary rounded-pill">
-                    <i class="bi bi-clock-history"></i> ข่าวเก่า
+                    <i class="bi bi-clock-history me-1"></i> ข่าวเก่า
                 </a>
             </div>
         </div>
@@ -76,10 +79,11 @@
                     <div class="pdf-viewer-container border rounded bg-white shadow-sm overflow-hidden position-relative">
                         <iframe src="/<%= pdfFile.file_path %>" style="width:100%; height:600px; border:none;"></iframe>
                     </div>
-                    <div class="mt-3 text-center">
-                        <a href="/<%= pdfFile.file_path %>" target="_blank" class="btn btn-primary rounded-pill px-4">
-                            <i class="bi bi-download me-2"></i>ดาวน์โหลด: 
-                            <span class="long-filename"><%= pdfFile.original_name %></span>
+                    <div class="mt-4 text-center">
+                        <a href="/<%= pdfFile.file_path %>" target="_blank" 
+                           class="btn btn-primary px-5 py-2 shadow-sm rounded-2" 
+                           style="min-width: 300px; max-width: 100%;">
+                            <i class="bi bi-download me-2"></i>ดาวน์โหลด <%= pdfFile.original_name %>
                         </a>
                     </div>
                 </div>

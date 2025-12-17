@@ -1,17 +1,14 @@
 /* public/css/style.css */
-
-/* --- IMPORT FONTS (Sarabun) --- */
 @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
 
-/* --- VARIABLES (Hospital Theme Palette) --- */
 :root {
-    --primary-color: #009973;      /* เขียวอมฟ้า (Teal Green) ทันสมัย */
-    --primary-dark: #007a5c;       /* เขียวเข้มสำหรับ Hover */
-    --secondary-color: #e8f5e9;    /* เขียวอ่อนพาสเทลสำหรับพื้นหลัง */
-    --accent-color: #ffc107;       /* สีเหลืองสำหรับจุดเด่น */
+    --primary-color: #009973;     
+    --primary-dark: #007a5c;       
+    --secondary-color: #e8f5e9;    
+    --accent-color: #ffc107;       
     --text-dark: #2c3e50;
     --text-muted: #6c757d;
-    --bg-light: #f8fbf8;           /* พื้นหลังขาวอมเขียวนิดๆ */
+    --bg-light: #f8fbf8;           
     --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
     --border-radius: 12px;
 }
@@ -20,10 +17,8 @@ body {
     font-family: 'Sarabun', sans-serif;
     background-color: var(--bg-light);
     color: var(--text-dark);
-    -webkit-font-smoothing: antialiased;
 }
 
-/* --- OVERRIDE BOOTSTRAP PRIMARY COLORS --- */
 .bg-primary { background-color: var(--primary-color) !important; }
 .text-primary { color: var(--primary-color) !important; }
 .btn-primary { background-color: var(--primary-color); border-color: var(--primary-color); }
@@ -31,7 +26,6 @@ body {
 .btn-outline-primary { color: var(--primary-color); border-color: var(--primary-color); }
 .btn-outline-primary:hover { background-color: var(--primary-color); color: white; }
 
-/* --- HEADER & NAVBAR --- */
 header {
     background: white !important; 
     border-bottom: 3px solid var(--primary-color);
@@ -48,14 +42,13 @@ header {
     text-decoration: none;
 }
 
-/* โค้ดสำหรับชื่อเว็บไซต์ (ประชาสัมพันธ์โรงพยาบาลเถิน) - สีเขียวทั้งหมด */
+/* บังคับชื่อเว็บเป็นสีเขียวทั้งหมด */
 .brand-text {
     color: var(--primary-color) !important;
     font-weight: 700;
     font-size: 1.5rem;
 }
 
-/* --- CARDS & CONTAINERS --- */
 .card {
     border: none;
     border-radius: var(--border-radius);
@@ -69,7 +62,6 @@ header {
     box-shadow: 0 8px 25px rgba(0, 153, 115, 0.15); 
 }
 
-/* --- TOPIC SELECTION (PILLS) --- */
 .topic-selection-center {
     text-align: center;
     margin: 40px 0;
@@ -102,7 +94,6 @@ header {
     box-shadow: 0 4px 10px rgba(0, 153, 115, 0.3);
 }
 
-/* --- NEWS LIST --- */
 .news-list {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -110,7 +101,6 @@ header {
     margin-top: 20px;
 }
 
-/* --- ADMIN TABLES --- */
 .table thead th {
     background-color: var(--secondary-color);
     color: var(--primary-dark);
@@ -118,12 +108,10 @@ header {
     border-bottom: 2px solid var(--primary-color);
 }
 
-/* --- BADGES (Subtle Colors) --- */
 .badge-subtle-success { background-color: #d1e7dd; color: #0f5132; }
 .badge-subtle-warning { background-color: #fff3cd; color: #664d03; }
 .badge-subtle-danger { background-color: #f8d7da; color: #842029; }
 
-/* --- OTHER ELEMENTS --- */
 .hero-section {
     background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
     color: white;
@@ -132,16 +120,16 @@ header {
     margin-bottom: 40px;
 }
 
-/* --- NEWS DETAIL PAGE --- */
 .gallery-img {
-    height: 180px; /* ขนาดรูปภาพตัวอย่างใน Gallery */
+    height: 180px;
     object-fit: cover;
     width: 100%;
     cursor: pointer;
 }
 
-.pdf-viewer-container iframe {
-    /* สไตล์สำหรับ iframe ที่แสดงผล PDF */
-    border: 1px solid #ddd;
-    border-radius: 8px;
+.long-filename {
+    word-break: break-all;
+    overflow-wrap: break-word;
+    display: block;
+    margin-top: 5px;
 }
