@@ -16,27 +16,40 @@
     <link rel="stylesheet" href="/css/style.css" />
   </head>
   <body>
-   <header class="bg-white border-bottom py-3 sticky-top">
-        <div class="container d-flex justify-content-between align-items-center">
-            <div class="d-flex align-items-center gap-3">
-                 <a href="/" class="brand-logo">
-                    <img src="/favicon.ico" alt="Hospital Logo" style="width: 32px; height: 32px;">
-                    <span class="brand-text">ประชาสัมพันธ์โรงพยาบาลเถิน</span>
-                </a>
-            </div>
-            
-            <div class="header-actions d-flex gap-2">
-                <a href="/" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-2 rounded-pill">
-                    <i class="bi bi-house-door-fill"></i> หน้าแรก
-                </a>
-                <a href="/admin/upload" class="btn btn-primary btn-sm d-flex align-items-center gap-2 rounded-pill shadow-sm">
-                    <i class="bi bi-plus-lg"></i> ลงข่าวใหม่
-                </a>
-                <a href="/admin/logout" class="btn btn-danger btn-sm d-flex align-items-center gap-2 rounded-pill">
-                    <i class="bi bi-box-arrow-right"></i> Logout
-                </a>
-            </div>
+    <header class="bg-white border-bottom py-3 sticky-top">
+      <div class="container d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center gap-3">
+          <a href="/" class="brand-logo">
+            <img
+              src="/favicon.ico"
+              alt="Hospital Logo"
+              style="width: 32px; height: 32px"
+            />
+            <span class="brand-text">ประชาสัมพันธ์โรงพยาบาลเถิน</span>
+          </a>
         </div>
+
+        <div class="header-actions d-flex gap-2">
+          <a
+            href="/"
+            class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-2 rounded-pill"
+          >
+            <i class="bi bi-house-door-fill"></i> หน้าแรก
+          </a>
+          <a
+            href="/admin/upload"
+            class="btn btn-primary btn-sm d-flex align-items-center gap-2 rounded-pill shadow-sm"
+          >
+            <i class="bi bi-plus-lg"></i> ลงข่าวใหม่
+          </a>
+          <a
+            href="/admin/logout"
+            class="btn btn-danger btn-sm d-flex align-items-center gap-2 rounded-pill"
+          >
+            <i class="bi bi-box-arrow-right"></i> Logout
+          </a>
+        </div>
+      </div>
     </header>
 
     <main class="container py-5">
@@ -77,11 +90,23 @@
                   </div>
                   <div class="col-md-4">
                     <label class="form-label fw-bold">หมวดหมู่</label>
-                    <select name="category" id="category" class="form-select" required>
-    <option value="ข่าวสารประชาสัมพันธ์">ข่าวสารประชาสัมพันธ์</option> <option value="ประชุมอบรม / สัมมนา">ประชุมอบรม / สัมมนา</option>
-    <option value="ประกาศรับสมัครงาน">ประกาศรับสมัครงาน</option>
-    <option value="ข่าวสารความรู้">ข่าวสารความรู้</option>
-</select>
+                    <select
+                      name="category"
+                      id="category"
+                      class="form-select"
+                      required
+                    >
+                      <option value="ข่าวสารประชาสัมพันธ์">
+                        ข่าวสารประชาสัมพันธ์
+                      </option>
+                      <option value="ประชุมอบรม / สัมมนา">
+                        ประชุมอบรม / สัมมนา
+                      </option>
+                      <option value="ประกาศรับสมัครงาน">
+                        ประกาศรับสมัครงาน
+                      </option>
+                      <option value="ข่าวสารความรู้">ข่าวสารความรู้</option>
+                    </select>
                   </div>
 
                   <div class="col-12"><hr class="text-muted opacity-25" /></div>
