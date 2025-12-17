@@ -8,6 +8,7 @@ const moment = require('moment');
 const multer = require('multer');
 const fs = require('fs');
 const crypto = require('crypto');
+const nodemailer = require('nodemailer'); // 🟢 เพิ่ม nodemailer
 require('dotenv').config();
 
 const db = require('./db');
@@ -15,38 +16,39 @@ const db = require('./db');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// 🟢 Function สร้าง Slug (รองรับภาษาไทย)
+// ตั้งค่าตัวส่งอีเมล (Transporter)
+const transporter = nodemailer.createTransport({
+    service: process.env.EMAIL_SERVICE,
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+    }
+});
+
+// Function สร้าง Slug
 function createSlug(title) {
     if (!title) return '';
     let slug = title.trim();
-    // เปลี่ยนช่องว่างและสัญลักษณ์เป็นขีดกลาง (-)
     slug = slug.replace(/[\s\/\(\)\?]+/g, '-');
-    // ลบขีดกลางที่อยู่หัวและท้าย
     slug = slug.replace(/^-+|-+$/g, '');
     return slug;
 }
 
-// ----------------------------------------------------
-// 1. MIDDLEWARES
-// ----------------------------------------------------
+// Middlewares
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
-
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-
 app.use(cookieParser());
 app.use(session({
     secret: process.env.SESSION_SECRET || 'secret_key',
     resave: false,
     saveUninitialized: true,
-    cookie: { maxAge: 1000 * 60 * 60 * 24 } // 24 ชั่วโมง
+    cookie: { maxAge: 1000 * 60 * 60 * 24 }
 }));
 
-// ส่งตัวแปร Global ให้ EJS
 app.use((req, res, next) => {
     res.locals.userId = req.session.userId;
     res.locals.moment = moment;
@@ -58,27 +60,15 @@ const requireLogin = (req, res, next) => {
     res.redirect('/admin/login');
 };
 
-// ----------------------------------------------------
-// 2. MULTER CONFIG
-// ----------------------------------------------------
+// Multer Config (เหมือนเดิม)
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        // รับค่าวันที่จาก Hidden Input ที่เราแก้ไว้ใน EJS
         let rawDate = req.body.start_date;
-        
-        // Fallback: กัน Error ถ้าไม่มีค่าส่งมา
-        if (!rawDate) {
-            rawDate = moment().format('YYYY-MM-DD');
-            console.warn('Warning: start_date missing, using current date.');
-        }
-        
+        if (!rawDate) rawDate = moment().format('YYYY-MM-DD');
         const startDate = moment(rawDate);
         const folderName = startDate.format('MMMM_YYYY'); 
         const uploadPath = path.join(__dirname, 'uploads', folderName);
-
-        if (!fs.existsSync(uploadPath)) {
-            fs.mkdirSync(uploadPath, { recursive: true });
-        }
+        if (!fs.existsSync(uploadPath)) fs.mkdirSync(uploadPath, { recursive: true });
         cb(null, uploadPath);
     },
     filename: (req, file, cb) => {
@@ -89,50 +79,95 @@ const storage = multer.diskStorage({
         cb(null, `${name}_${sDate}_${uniqueSuffix}${ext}`);
     }
 });
-
 const fileFilter = (req, file, cb) => {
-    if (file.mimetype.startsWith('image/') || file.mimetype === 'application/pdf') {
-        cb(null, true);
-    } else {
-        cb(null, false);
-    }
+    if (file.mimetype.startsWith('image/') || file.mimetype === 'application/pdf') cb(null, true);
+    else cb(null, false);
 };
-
-const upload = multer({ 
-    storage: storage,
-    fileFilter: fileFilter,
-    limits: { fileSize: 1024 * 1024 * 20 } // 20MB
-}).fields([
-    { name: 'images', maxCount: 10 }, 
-    { name: 'pdf_file', maxCount: 1 }
-]);
+const upload = multer({ storage: storage, fileFilter: fileFilter, limits: { fileSize: 1024 * 1024 * 20 } }).fields([{ name: 'images', maxCount: 10 }, { name: 'pdf_file', maxCount: 1 }]);
 
 // ----------------------------------------------------
-// 3. ADMIN ROUTES
+// ROUTES: Authentication & 2FA
 // ----------------------------------------------------
+
+// 1. หน้า Login
 app.get('/admin/login', (req, res) => {
     if (req.session.userId) return res.redirect('/admin/news');
     res.render('admin/login');
 });
 
+// 2. รับค่า Login -> ตรวจรหัส -> ส่ง OTP
 app.post('/admin/login', async (req, res) => {
     const { username, password } = req.body;
     try {
         const [users] = await db.query('SELECT * FROM users WHERE username = ?', [username]);
-        if (users.length === 0) return res.render('admin/login', { error: 'Username or Password incorrect.' });
+        if (users.length === 0) return res.render('admin/login', { error: 'ไม่พบชื่อผู้ใช้งาน' });
 
         const user = users[0];
         const inputHash = crypto.createHash('sha256').update(password).digest('hex');
         
         if (inputHash === user.password_hash) {
-            req.session.userId = user.id;
-            res.redirect('/admin/news');
+            // รหัสผ่านถูก -> สร้าง OTP
+            const otp = Math.floor(100000 + Math.random() * 900000).toString(); // เลข 6 หลัก
+            
+            // เก็บข้อมูลชั่วคราวใน Session (ยังไม่ถือว่า Login สำเร็จ)
+            req.session.tempUserId = user.id;
+            req.session.otp = otp;
+            req.session.otpTime = Date.now();
+
+            // ส่งอีเมล
+            const mailOptions = {
+                from: process.env.EMAIL_USER,
+                to: user.email,
+                subject: '🔑 รหัสยืนยันตัวตน (OTP) - Admin Login',
+                text: `รหัส OTP ของคุณคือ: ${otp} (มีอายุ 5 นาที)`
+            };
+
+            await transporter.sendMail(mailOptions);
+            console.log(`OTP sent to ${user.email}: ${otp}`); // Log ดูเผื่อเมลมีปัญหา
+
+            // ไปหน้ากรอก OTP
+            res.redirect('/admin/verify-2fa');
         } else {
-            res.render('admin/login', { error: 'Username or Password incorrect.' });
+            res.render('admin/login', { error: 'รหัสผ่านไม่ถูกต้อง' });
         }
     } catch (err) {
         console.error(err);
-        res.status(500).send('Server Error');
+        res.render('admin/login', { error: 'เกิดข้อผิดพลาดของระบบ: ' + err.message });
+    }
+});
+
+// 3. หน้ากรอก OTP
+app.get('/admin/verify-2fa', (req, res) => {
+    if (!req.session.tempUserId) return res.redirect('/admin/login'); // ถ้าไม่ได้ Login มาก่อน ห้ามเข้า
+    res.render('admin/verify_2fa');
+});
+
+// 4. ตรวจสอบ OTP -> Login สำเร็จ
+app.post('/admin/verify-2fa', (req, res) => {
+    const { otp } = req.body;
+    const sessionOtp = req.session.otp;
+    const otpTime = req.session.otpTime;
+
+    if (!req.session.tempUserId || !sessionOtp) return res.redirect('/admin/login');
+
+    // ตรวจสอบอายุ OTP (5 นาที)
+    if (Date.now() - otpTime > 5 * 60 * 1000) {
+        req.session.destroy();
+        return res.render('admin/login', { error: 'รหัส OTP หมดอายุ กรุณาเข้าสู่ระบบใหม่' });
+    }
+
+    if (otp === sessionOtp) {
+        // ✅ OTP ถูกต้อง -> Login จริง
+        req.session.userId = req.session.tempUserId;
+        
+        // ล้างค่าชั่วคราว
+        delete req.session.tempUserId;
+        delete req.session.otp;
+        delete req.session.otpTime;
+
+        res.redirect('/admin/news');
+    } else {
+        res.render('admin/verify_2fa', { error: 'รหัส OTP ไม่ถูกต้อง' });
     }
 });
 
@@ -142,6 +177,14 @@ app.get('/admin/logout', (req, res) => {
         res.redirect('/admin/login');
     });
 });
+
+// ... (Routes อื่นๆ: news, upload, edit, delete, public routes เหมือนเดิม) ...
+// Copy ส่วน admin/news, admin/upload, admin/edit, public routes จากไฟล์เดิมมาวางต่อท้ายได้เลยครับ
+// หรือใช้ไฟล์เดิมแต่เปลี่ยนเฉพาะส่วน Login/2FA ด้านบนนี้
+
+// ----------------------------------------------------
+// Admin Routes (ส่วนที่เหลือ) & Public Routes
+// ----------------------------------------------------
 
 app.get('/admin/news', requireLogin, async (req, res) => {
     try {
@@ -173,8 +216,6 @@ app.post('/admin/upload', requireLogin, upload, async (req, res) => {
     const allFiles = [...imageFiles, ...pdfFiles];
 
     if (!title || !start_date || !end_date) return res.status(400).send('Missing fields.');
-
-    // สร้าง Slug
     const slug = createSlug(title);
 
     try {
@@ -208,10 +249,8 @@ app.get('/admin/edit/:id', requireLogin, async (req, res) => {
         const [news] = await db.query('SELECT * FROM news WHERE id = ?', [req.params.id]);
         if (news.length === 0) return res.status(404).send('Not Found');
         const [files] = await db.query('SELECT * FROM attachments WHERE news_id = ?', [req.params.id]);
-        
         news[0].start_date_local = moment(news[0].start_date).format('YYYY-MM-DD HH:mm');
         news[0].end_date_local = moment(news[0].end_date).format('YYYY-MM-DD HH:mm');
-
         res.render('admin/edit', { news: news[0], files: files });
     } catch (err) {
         res.status(500).send('Error loading edit page');
@@ -224,8 +263,6 @@ app.post('/admin/update/:id', requireLogin, upload, async (req, res) => {
     const imageFiles = req.files.images || [];
     const pdfFiles = req.files.pdf_file || [];
     const allNewFiles = [...imageFiles, ...pdfFiles];
-
-    // สร้าง Slug ใหม่ถ้าชื่อเปลี่ยน
     const slug = createSlug(title);
 
     try {
@@ -278,17 +315,8 @@ app.get('/admin/delete/:id', requireLogin, async (req, res) => {
     }
 });
 
-// ----------------------------------------------------
-// 4. PUBLIC ROUTES
-// ----------------------------------------------------
-
 app.get('/', async (req, res) => {
-    const categories = [
-    'ข่าวสารประชาสัมพันธ์',  // << แก้ตรงนี้
-    'ประชุมอบรม / สัมมนา', 
-    'ประกาศรับสมัครงาน', 
-    'ข่าวสารความรู้'
-];
+    const categories = ['ข่าวสารประชาสัมพันธ์', 'ประชุมอบรม / สัมมนา', 'ประกาศรับสมัครงาน', 'ข่าวสารความรู้'];
     const currentCategory = req.query.category || categories[0];
     try {
         const sql = `
@@ -306,7 +334,6 @@ app.get('/', async (req, res) => {
     }
 });
 
-// หน้าข่าวเก่า (Archive)
 app.get('/archive', async (req, res) => {
     try {
         const sql = `
@@ -322,8 +349,6 @@ app.get('/archive', async (req, res) => {
     }
 });
 
-// 🟢 ส่วนที่แก้ไขเพื่อแก้ปัญหา PathError ?
-// สร้าง Handler ไว้ใช้ซ้ำ
 const newsDetailHandler = async (req, res) => {
     const newsId = req.params.id;
     const requestedSlug = req.params.slug;
@@ -334,23 +359,14 @@ const newsDetailHandler = async (req, res) => {
         if (newsResult.length === 0) return res.status(404).send('Not Found');
         const news = newsResult[0];
         
-        // ตรวจสอบ Slug (SEO URL)
         const correctSlug = createSlug(news.title);
+        if (requestedSlug !== correctSlug) return res.redirect(301, `/news/${newsId}/${correctSlug}`);
         
-        // ถ้า Slug ไม่ตรง หรือ ไม่ได้ส่งมา -> Redirect ไป URL ที่ถูก
-        if (requestedSlug !== correctSlug) {
-             return res.redirect(301, `/news/${newsId}/${correctSlug}`);
-        }
-
         const now = moment();
         const startDate = moment(news.start_date);
         
-        // Access Control: ถ้าไม่ใช่ Admin และข่าวเป็นอนาคต ห้ามดู
-        if (!req.session.userId && now.isBefore(startDate)) {
-            return res.status(404).send('News not yet available.');
-        }
+        if (!req.session.userId && now.isBefore(startDate)) return res.status(404).send('News not yet available.');
 
-        // นับวิว (นับได้ตลอดถ้าไม่ซ้ำ Cookie, ข่าวเก่าก็นับได้)
         if (!req.cookies[viewKey]) {
             await db.query('UPDATE news SET view_count = view_count + 1 WHERE id = ?', [newsId]);
             res.cookie(viewKey, 'true', { maxAge: 86400000, httpOnly: true }); 
@@ -364,15 +380,11 @@ const newsDetailHandler = async (req, res) => {
     }
 };
 
-// แยก Route เป็น 2 บรรทัด เพื่อเลี่ยงการใช้ ? ที่มีปัญหาในบางเวอร์ชัน
 app.get('/news/:id', newsDetailHandler);
 app.get('/news/:id/:slug', newsDetailHandler);
 
-
-// START SERVER (Listen to all IPs for LAN)
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on http://localhost:${PORT}`);
-    // Show LAN IP
     const os = require('os');
     const ifaces = os.networkInterfaces();
     Object.keys(ifaces).forEach(function (ifname) {
