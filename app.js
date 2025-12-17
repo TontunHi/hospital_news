@@ -263,7 +263,7 @@ app.get('/admin/delete/:id', requireLogin, async (req, res) => {
 // ----------------------------------------------------
 
 app.get('/', async (req, res) => {
-    const categories = ['Topic 1', 'Topic 2', 'Topic 3', 'Topic 4'];
+    const categories = ['ข่าวสาร / ข่าวประชาสัมพันธ์', 'ประชุมอบรม / สัมมนา', 'ประกาศรับสมัครงาน', 'ข่าวสารความรู้'];
     const currentCategory = req.query.category || categories[0];
     try {
         const sql = `
@@ -334,7 +334,32 @@ app.get('/news/:id', async (req, res) => {
         res.status(500).send('Error loading detail');
     }
 });
-
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => { // <<< เพิ่ม '0.0.0.0' เข้าไป
     console.log(`Server running on http://localhost:${PORT}`);
+    
+    // แสดง IP Address ภายใน LAN เพื่อให้เครื่องอื่นใช้งานได้
+    const os = require('os');
+    const ifaces = os.networkInterfaces();
+    
+    Object.keys(ifaces).forEach(function (ifname) {
+      var alias = 0;
+
+      ifaces[ifname].forEach(function (iface) {
+        if ('IPv4' !== iface.family || iface.internal !== false) {
+          // ข้าม IPv6 และ internal addresses (127.0.0.1)
+          return;
+        }
+
+        if (alias >= 1) {
+          // กรณีที่มีหลาย IP ใน Interface เดียว
+          console.log(`\n[EXTERNAL ACCESS - ${ifname}]`);
+          console.log(`  Access via: http://${iface.address}:${PORT}`);
+        } else {
+          // กรณีปกติ
+          console.log(`\n[EXTERNAL ACCESS - ${ifname}]`);
+          console.log(`  Access via: http://${iface.address}:${PORT}`);
+        }
+        ++alias;
+      });
+    });
 });

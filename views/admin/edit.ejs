@@ -51,7 +51,10 @@
                                 <div class="col-md-4">
                                     <label class="form-label fw-bold">หมวดหมู่</label>
                                     <select name="category" class="form-select" required>
-                                        <% ['Topic 1', 'Topic 2', 'Topic 3', 'Topic 4'].forEach(cat => { %>
+                                        <% 
+                                            const cats = ['ข่าวสาร / ข่าวประชาสัมพันธ์', 'ประชุมอบรม / สัมมนา', 'ประกาศรับสมัครงาน', 'ข่าวสารความรู้'];
+                                            cats.forEach(cat => { 
+                                        %>
                                             <option value="<%= cat %>" <%= news.category === cat ? 'selected' : '' %>><%= cat %></option>
                                         <% }); %>
                                     </select>
