@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -10,21 +11,23 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="/css/style.css">
 </head>
+
 <body>
-   <header class="bg-white border-bottom py-3 sticky-top">
+    <header class="bg-white border-bottom py-3 sticky-top">
         <div class="container d-flex justify-content-between align-items-center">
             <div class="d-flex align-items-center gap-3">
-                 <a href="/" class="brand-logo">
+                <a href="/" class="brand-logo">
                     <img src="/favicon.ico" alt="Hospital Logo" style="width: 32px; height: 32px;">
                     <span class="brand-text">ประชาสัมพันธ์โรงพยาบาลเถิน</span>
                 </a>
             </div>
-            
+
             <div class="header-actions d-flex gap-2">
                 <a href="/" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-2 rounded-pill">
                     <i class="bi bi-house-door-fill"></i> หน้าแรก
                 </a>
-                <a href="/admin/upload" class="btn btn-primary btn-sm d-flex align-items-center gap-2 rounded-pill shadow-sm">
+                <a href="/admin/upload"
+                    class="btn btn-primary btn-sm d-flex align-items-center gap-2 rounded-pill shadow-sm">
                     <i class="bi bi-plus-lg"></i> ลงข่าวใหม่
                 </a>
                 <a href="/admin/logout" class="btn btn-danger btn-sm d-flex align-items-center gap-2 rounded-pill">
@@ -33,7 +36,7 @@
             </div>
         </div>
     </header>
-    
+
     <main class="container py-5">
         <div class="row justify-content-center">
             <div class="col-lg-8">
@@ -42,103 +45,137 @@
                 <div class="card shadow-sm border-0 rounded-4">
                     <div class="card-body p-4">
                         <form action="/admin/update/<%= news.id %>" method="POST" enctype="multipart/form-data">
-                            
-                            <input type="hidden" name="start_date" id="real_start_date" value="<%= news.start_date_local.replace('T', ' ') %>">
-                            <input type="hidden" name="end_date" id="real_end_date" value="<%= news.end_date_local.replace('T', ' ') %>">
 
-                            <div class="row g-3">
+                            <input type="hidden" name="start_date" id="real_start_date"
+                                value="<%= news.start_date_local.replace('T', ' ') %>">
+                            <input type="hidden" name="end_date" id="real_end_date"
+                                value="<%= news.end_date_local.replace('T', ' ') %>">
+
+                            <div class="row g-3 mb-4">
                                 <div class="col-md-8">
                                     <label class="form-label fw-bold">หัวข้อข่าวสาร</label>
-                                    <input type="text" name="title" class="form-control" value="<%= news.title %>" required>
+                                    <input type="text" name="title" class="form-control" value="<%= news.title %>"
+                                        required>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label fw-bold">หมวดหมู่</label>
                                     <select name="category" class="form-select" required>
-    <% 
-        const cats = ['ข่าวสารประชาสัมพันธ์', 'ประชุมอบรม / สัมมนา', 'ประกาศรับสมัครงาน', 'ข่าวสารความรู้'];
-        cats.forEach(cat => { 
-    %>
-        <option value="<%= cat %>" <%= news.category === cat ? 'selected' : '' %>><%= cat %></option>
-    <% }); %>
-</select>
+                                        <% const cats=['ข่าวสารประชาสัมพันธ์', 'ประชุมอบรม / สัมมนา'
+                                            , 'ประกาศรับสมัครงาน' , 'ข่าวสารความรู้' ]; cats.forEach(cat=> { %>
+                                            <option value="<%= cat %>" <%=news.category===cat ? 'selected' : '' %>>
+                                                <%= cat %>
+                                            </option>
+                                            <% }); %>
+                                    </select>
                                 </div>
+                            </div>
 
-                                <div class="col-12"><hr class="text-muted opacity-25"></div>
+                            <hr class="text-muted opacity-25 my-4">
 
-                                <div class="col-12">
-                                    <label class="form-label fw-bold">ไฟล์แนบปัจจุบัน</label>
-                                    <div class="bg-light p-3 rounded border">
-                                        <% if (files.length > 0) { %>
-                                            <div class="d-flex flex-column gap-2">
-                                                <% files.forEach(file => { %>
-                                                    <div class="form-check d-flex align-items-center">
-                                                        <input class="form-check-input me-2" type="checkbox" name="files_to_delete" value="<%= file.id %>" id="file_<%= file.id %>">
-                                                        <label class="form-check-label d-flex align-items-center w-100" for="file_<%= file.id %>">
-                                                            <% if (file.file_type === 'image') { %>
-                                                                <i class="bi bi-image text-success me-2"></i>
-                                                            <% } else { %>
-                                                                <i class="bi bi-file-pdf text-danger me-2"></i>
+                            <div class="mb-4">
+                                <label class="form-label fw-bold mb-3">ไฟล์แนบปัจจุบัน</label>
+
+                                <% if (files.length> 0) { %>
+                                    <div class="d-flex flex-column gap-2" id="file-list-container">
+                                        <% files.forEach(file=> { %>
+                                            <div class="d-flex align-items-center bg-white p-2 rounded border justify-content-between"
+                                                id="file-row-<%= file.id %>">
+                                                <div class="d-flex align-items-center overflow-hidden">
+                                                    <% if (file.file_type==='image' ) { %>
+                                                        <i class="bi bi-image text-success me-2 fs-5 flex-shrink-0"></i>
+                                                        <% } else { %>
+                                                            <i
+                                                                class="bi bi-file-pdf text-danger me-2 fs-5 flex-shrink-0"></i>
                                                             <% } %>
-                                                            <span class="text-truncate me-auto"><%= file.original_name %></span>
-                                                            <a href="/<%= file.file_path %>" target="_blank" class="btn btn-sm btn-link text-decoration-none ms-2">ดูไฟล์</a>
-                                                            <span class="badge bg-danger ms-2">ติ๊กเพื่อลบ</span>
-                                                        </label>
-                                                    </div>
-                                                <% }); %>
+                                                                <span class="text-truncate" style="max-width: 350px;">
+                                                                    <%= file.original_name %>
+                                                                </span>
+                                                                <a href="/<%= file.file_path %>" target="_blank"
+                                                                    class="btn btn-sm btn-link text-decoration-none ms-2 flex-shrink-0">
+                                                                    <i class="bi bi-eye"></i> ดูไฟล์
+                                                                </a>
+                                                </div>
+                                                <button type="button"
+                                                    class="btn btn-danger btn-sm rounded-pill ms-2 flex-shrink-0 px-3"
+                                                    onclick="deleteFile('<%= file.id %>')">
+                                                    <i class="bi bi-trash"></i> ลบ
+                                                </button>
                                             </div>
-                                        <% } else { %>
-                                            <p class="text-muted small mb-0">ไม่มีไฟล์แนบ</p>
-                                        <% } %>
+                                            <% }); %>
                                     </div>
-                                </div>
-
-                                <div class="col-md-6">
-                                    <label class="form-label fw-bold text-success">เพิ่มรูปภาพใหม่</label>
-                                    <input type="file" name="images" class="form-control" multiple accept="image/*">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-bold text-danger">เพิ่มไฟล์ PDF ใหม่</label>
-                                    <input type="file" name="pdf_file" class="form-control" accept="application/pdf">
-                                </div>
-
-                                <div class="col-12"><hr class="text-muted opacity-25"></div>
-
-                                <div class="col-12">
-                                    <label class="form-label fw-bold">Link YouTube</label>
-                                    <input type="text" name="youtube_link" class="form-control" value="<%= news.youtube_link || '' %>">
-                                </div>
-
-                                <div class="col-12">
-                                    <div class="bg-light p-3 rounded-3 border">
-                                        <h6 class="fw-bold mb-3 text-secondary"><i class="bi bi-clock"></i> แก้ไขช่วงเวลาแสดงผล</h6>
-                                        <div class="row g-3">
-                                            <div class="col-md-6">
-                                                <label class="form-label small text-muted">เริ่มแสดง</label>
-                                                <input type="text" id="ui_start_date" class="form-control datetime-picker" 
-                                                       value="<%= news.start_date_local.replace('T', ' ') %>" required>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label class="form-label small text-muted">สิ้นสุด</label>
-                                                <input type="text" id="ui_end_date" class="form-control datetime-picker" 
-                                                       value="<%= news.end_date_local.replace('T', ' ') %>" required>
-                                            </div>
+                                    <% } else { %>
+                                        <div id="no-file-msg"
+                                            class="text-muted small text-center py-3 bg-light rounded border border-dashed">
+                                            ไม่มีไฟล์แนบ
                                         </div>
+                                        <% } %>
+                            </div>
+
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6">
+                                    <div class="p-3 bg-light rounded border h-100">
+                                        <label class="form-label fw-bold text-danger">
+                                            <i class="bi bi-file-earmark-pdf-fill me-1"></i> เพิ่มไฟล์ PDF ใหม่
+                                        </label>
+                                        <input type="file" name="pdf_file" class="form-control"
+                                            accept="application/pdf">
+                                        <div class="form-text small">รองรับไฟล์ .pdf เท่านั้น</div>
                                     </div>
                                 </div>
 
-                                <div class="col-12 mt-4 d-flex gap-2">
-                                    <button type="submit" class="btn btn-primary flex-grow-1 py-2 rounded-pill fw-bold shadow-sm">
-                                        <i class="bi bi-save me-2"></i> บันทึกการแก้ไข
-                                    </button>
+                                <div class="col-md-6">
+                                    <div class="p-3 bg-light rounded border h-100">
+                                        <label class="form-label fw-bold text-success">
+                                            <i class="bi bi-image-fill me-1"></i> เพิ่มรูปภาพใหม่
+                                        </label>
+                                        <input type="file" name="images" class="form-control" multiple accept="image/*">
+                                        <div class="form-text small">รองรับไฟล์ .jpg, .png, .jpeg</div>
+                                    </div>
                                 </div>
+                            </div>
+
+                            <hr class="text-muted opacity-25 my-4">
+
+                            <div class="mb-4">
+                                <label class="form-label fw-bold"><i class="bi bi-youtube text-danger me-1"></i> Link
+                                    YouTube</label>
+                                <input type="text" name="youtube_link" class="form-control"
+                                    placeholder="วางลิงก์ YouTube ที่นี่..." value="<%= news.youtube_link || '' %>">
+                            </div>
+
+                            <div class="bg-light p-3 rounded-3 border mb-4">
+                                <h6 class="fw-bold mb-3 text-secondary"><i class="bi bi-clock"></i> แก้ไขช่วงเวลาแสดงผล
+                                </h6>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label small text-muted">เริ่มแสดง</label>
+                                        <input type="text" id="ui_start_date" class="form-control datetime-picker"
+                                            value="<%= news.start_date_local.replace('T', ' ') %>" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label small text-muted">สิ้นสุด</label>
+                                        <input type="text" id="ui_end_date" class="form-control datetime-picker"
+                                            value="<%= news.end_date_local.replace('T', ' ') %>" required>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex gap-2">
+                                <button type="submit"
+                                    class="btn btn-primary flex-grow-1 py-2 rounded-pill fw-bold shadow-sm">
+                                    <i class="bi bi-save me-2"></i> บันทึกการแก้ไข
+                                </button>
                             </div>
                         </form>
                     </div>
                 </div>
+                </form>
             </div>
         </div>
+        </div>
+        </div>
     </main>
-    
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>
@@ -147,7 +184,7 @@
             dateFormat: "Y-m-d H:i",
             time_24hr: true,
             minuteIncrement: 1,
-            onChange: function(selectedDates, dateStr, instance) {
+            onChange: function (selectedDates, dateStr, instance) {
                 if (instance.input.id === 'ui_start_date') {
                     document.getElementById('real_start_date').value = dateStr;
                 } else if (instance.input.id === 'ui_end_date') {
@@ -158,6 +195,41 @@
 
         flatpickr("#ui_start_date", config);
         flatpickr("#ui_end_date", config);
+
+        function deleteFile(fileId) {
+            if (confirm('คุณแน่ใจว่าต้องการลบไฟล์นี้? การกระทำนี้ไม่สามารถย้อนกลับได้')) {
+                fetch('/admin/delete-file/' + fileId, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            const row = document.getElementById('file-row-' + fileId);
+                            if (row) {
+                                row.remove();
+                                // check if no files left
+                                const listContainer = document.querySelector('.d-flex.flex-column.gap-2');
+                                if (listContainer && listContainer.children.length === 0) {
+                                    // Find the container to update message
+                                    const parent = listContainer.parentElement;
+                                    parent.innerHTML = '<p class="text-muted small mb-0 text-center py-3">ไม่มีไฟล์แนบ</p>';
+                                }
+                            }
+                            alert('ลบไฟล์สำเร็จ');
+                        } else {
+                            alert('เกิดข้อผิดพลาด: ' + (data.message || 'ไม่สามารถลบไฟล์ได้'));
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        alert('เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์');
+                    });
+            }
+        }
     </script>
 </body>
+
 </html>
