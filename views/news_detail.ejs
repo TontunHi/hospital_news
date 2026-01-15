@@ -80,7 +80,7 @@
                         <iframe src="/<%= pdfFile.file_path %>" style="width:100%; height:600px; border:none;"></iframe>
                     </div>
                     <div class="mt-4 text-center">
-                        <a href="/<%= pdfFile.file_path %>" target="_blank" 
+                        <a href="/<%= pdfFile.file_path %>" target="_blank" download="<%= pdfFile.original_name %>" 
                            class="btn btn-primary px-5 py-2 shadow-sm rounded-2" 
                            style="min-width: 300px; max-width: 100%;">
                             <i class="bi bi-download me-2"></i>ดาวน์โหลด <%= pdfFile.original_name %> 
