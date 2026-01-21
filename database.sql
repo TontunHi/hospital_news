@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS news (
     id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     slug VARCHAR(255) NOT NULL,
-    category VARCHAR(50) NOT NULL,
+    category VARCHAR(100) NOT NULL,
     youtube_link VARCHAR(255),
     start_date DATETIME NOT NULL,
     end_date DATETIME NOT NULL,
