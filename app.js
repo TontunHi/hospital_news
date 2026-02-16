@@ -32,8 +32,11 @@ app.use(helmet({
             imgSrc: ["'self'", "data:", "blob:"],
             frameSrc: ["'self'", "www.youtube.com"],
             connectSrc: ["'self'", "cdn.jsdelivr.net"],
+            upgradeInsecureRequests: null, // Disable auto-upgrade to HTTPS
         },
     },
+    strictTransportSecurity: false, // Disable HSTS for HTTP usage
+    crossOriginOpenerPolicy: false, // Disable COOP to reduce noise/issues on IP access
 }));
 
 // Rate Limiting for Auth Routes
@@ -60,7 +63,7 @@ app.use(session({
     cookie: { 
         maxAge: 1000 * 60 * 60 * 24,
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production' // Secure in production
+        secure: process.env.HTTPS === 'true' // Only secure if explicitly enabled or on HTTPS
     }
 }));
 
