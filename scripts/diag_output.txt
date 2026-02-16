@@ -1,0 +1,14 @@
+[dotenv@17.2.3] injecting env (10) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+--- Test 1: charset option ---
+  character_set_connection: tis620
+  character_set_client: tis620
+--- Test 2: SET NAMES utf8mb4 ---
+  character_set_connection: utf8mb4
+  Input:   ทดสอบภาษาไทย
+  Output:  ทดสอบภาษาไทย
+  Match:   ✅ PASS
+--- Test 3: charsetNumber 45 (utf8mb4_general_ci) ---
+  character_set_connection: tis620
+  Input:   ทดสอบภาษาไทย
+  Output:  เธ�เธ�เธชเธญเธ�เธ�เธฒเธฉเธฒเน�เธ�เธข
+  Match:   ❌ FAIL

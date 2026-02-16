@@ -10,8 +10,13 @@ const pool = mysql.createPool({
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0,
-    charset: 'utf8mb4', // Fix for Thai characters
+    charset: 'utf8mb4',
     timezone: '+07:00'
+});
+
+// Force UTF-8 on every new connection (server default is tis620)
+pool.on('connection', (connection) => {
+    connection.query("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
 });
 
 module.exports = pool.promise();
