@@ -10,14 +10,20 @@ exports.getLogin = (req, res) => {
 exports.postLogin = async (req, res) => {
     const { username, password } = req.body;
     try {
+        console.log(`Login attempt for: ${username}`);
         const user = await UserModel.findByUsername(username);
-        // Use generic error message to prevent username enumeration
-        if (!user) return res.render('admin/login', { error: 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง' });
+        
+        if (!user) {
+            console.log('User not found');
+            return res.render('admin/login', { error: 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง' });
+        }
 
         const match = await bcrypt.compare(password, user.password_hash);
+        console.log(`Password match: ${match}`);
         
         if (match) {
             const otp = Math.floor(100000 + Math.random() * 900000).toString();
+            console.log(`Generated OTP for ${user.email}`); // Temporary debug
             
             req.session.tempUserId = user.id;
             req.session.otp = otp;
@@ -30,15 +36,23 @@ exports.postLogin = async (req, res) => {
                 text: `รหัส OTP ของคุณคือ: ${otp} (มีอายุ 5 นาที)`
             };
 
-            await transporter.sendMail(mailOptions);
-            // OTP logging removed for security
+            console.log('Sending email...');
+            try {
+                await transporter.sendMail(mailOptions);
+                console.log('Email sent successfully');
+            } catch (emailErr) {
+                console.error('Email sending failed:', emailErr);
+                // Fallback for debugging: print OTP to console if email fails
+                console.log(`[DEBUG FALLBACK] OTP: ${otp}`); 
+            }
             
             res.redirect('/admin/verify-2fa');
         } else {
+            console.log('Password mismatch');
             res.render('admin/login', { error: 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง' });
         }
     } catch (err) {
-        console.error(err);
+        console.error('Login Error:', err);
         res.render('admin/login', { error: 'เกิดข้อผิดพลาดของระบบ' });
     }
 };
