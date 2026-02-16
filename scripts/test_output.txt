@@ -1,6 +1,0 @@
-[dotenv@17.2.3] injecting env (10) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
-Testing DB Encoding...
-Inserting: "ทดสอบภาษาไทย 1771239540818"
-Insert ID: 8
-Fetched:   "ทดสอบภาษาไทย 1771239540818"
-✅ Encoding Test PASSED: Strings match.

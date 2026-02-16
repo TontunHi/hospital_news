@@ -28,27 +28,10 @@ exports.getUpload = (req, res) => {
     res.render('admin/upload', { success: req.query.success });
 };
 
-const db = require('../db'); // Import db for getting connection
-
-// Helper to fix Thai encoding (latin1 -> utf8)
-function fixUtf8(str) {
-    if (!str) return str;
-    try {
-        // Only convert if it looks like garbage (optional check, but safe to just convert if we know it's latin1)
-        return Buffer.from(str, 'latin1').toString('utf8');
-    } catch (e) {
-        return str;
-    }
-}
+const db = require('../db');
 
 exports.postUpload = async (req, res) => {
-    let { title, category, youtube_link, start_date, end_date } = req.body;
-    
-    console.log('DEBUG: Received Title:', title);
-    console.log('DEBUG: Received Category:', category);
-    
-    // NOTE: Removed fixUtf8 for body fields as they appear to be correct UTF-8 already.
-    // usage of Buffer.from(utf8string, 'latin1') was corrupting the data.
+    const { title, category, youtube_link, start_date, end_date } = req.body;
     
     const imageFiles = req.files.images || [];
     const pdfFiles = req.files.pdf_file || [];
@@ -66,13 +49,10 @@ exports.postUpload = async (req, res) => {
 
         if (allFiles.length > 0) {
             const fileValues = allFiles.map(f => {
-                // Fix for Thai filename encoding
-                const originalNameFixed = fixUtf8(f.originalname);
-                console.log(`File: ${f.originalname} -> ${originalNameFixed}`);
-                
+                // originalname already decoded by upload.js middleware
                 const type = f.mimetype.includes('pdf') ? 'pdf' : 'image';
                 const dbPath = path.relative(path.join(__dirname, '..', 'uploads'), f.path).replace(/\\/g, '/');
-                return [newsId, path.join('uploads', dbPath), type, originalNameFixed];
+                return [newsId, path.join('uploads', dbPath), type, f.originalname];
             });
             await AttachmentModel.addAttachments(fileValues, connection);
         }
@@ -107,10 +87,7 @@ exports.getEdit = async (req, res) => {
 
 exports.postUpdate = async (req, res) => {
     const newsId = req.params.id;
-    let { title, category, youtube_link, start_date, end_date, files_to_delete } = req.body;
-    
-    // NOTE: Removed fixUtf8 for body fields.
-    console.log('DEBUG: Received Title Update:', title);
+    const { title, category, youtube_link, start_date, end_date, files_to_delete } = req.body;
     
     const imageFiles = req.files.images || [];
     const pdfFiles = req.files.pdf_file || [];
@@ -137,12 +114,10 @@ exports.postUpdate = async (req, res) => {
 
         if (allNewFiles.length > 0) {
             const fileValues = allNewFiles.map(f => {
-                // Fix for Thai filename encoding
-                const originalNameFixed = fixUtf8(f.originalname);
-                
+                // originalname already decoded by upload.js middleware
                 const type = f.mimetype.includes('pdf') ? 'pdf' : 'image';
                 const dbPath = path.relative(path.join(__dirname, '..', 'uploads'), f.path).replace(/\\/g, '/');
-                return [newsId, path.join('uploads', dbPath), type, originalNameFixed];
+                return [newsId, path.join('uploads', dbPath), type, f.originalname];
             });
             await AttachmentModel.addAttachments(fileValues, connection);
         }
