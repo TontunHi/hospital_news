@@ -44,14 +44,12 @@ function fixUtf8(str) {
 exports.postUpload = async (req, res) => {
     let { title, category, youtube_link, start_date, end_date } = req.body;
     
-    console.log('Original Title (Body):', title);
+    console.log('DEBUG: Received Title:', title);
+    console.log('DEBUG: Received Category:', category);
     
-    // Fix encoding for text fields
-    title = fixUtf8(title);
-    category = fixUtf8(category);
-
-    console.log('Fixed Title:', title);
-
+    // NOTE: Removed fixUtf8 for body fields as they appear to be correct UTF-8 already.
+    // usage of Buffer.from(utf8string, 'latin1') was corrupting the data.
+    
     const imageFiles = req.files.images || [];
     const pdfFiles = req.files.pdf_file || [];
     const allFiles = [...imageFiles, ...pdfFiles];
@@ -111,10 +109,9 @@ exports.postUpdate = async (req, res) => {
     const newsId = req.params.id;
     let { title, category, youtube_link, start_date, end_date, files_to_delete } = req.body;
     
-    // Fix encoding for text fields
-    title = fixUtf8(title);
-    category = fixUtf8(category);
-
+    // NOTE: Removed fixUtf8 for body fields.
+    console.log('DEBUG: Received Title Update:', title);
+    
     const imageFiles = req.files.images || [];
     const pdfFiles = req.files.pdf_file || [];
     const allNewFiles = [...imageFiles, ...pdfFiles];
