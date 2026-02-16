@@ -36,4 +36,5 @@ CREATE TABLE IF NOT EXISTS attachments (
 -- Insert default admin users
 INSERT INTO users (username, password_hash, email, role) VALUES
 ('pisutyimkuson', '$2b$10$v78iFWUfhwnDwCQy2Fg8QODgpmjEdLGwQikijJsXBdjWV0JAzZCTG', 'tontunhi99@gmail.com', 'admin'),
-('thoenhp@gmail.com', '$2b$10$z3YnTAVdqUoYSz8WZDbeVu8x31DyCyhGI1mivxb3VYWx2J.UF.hgq', 'thoenhp@gmail.com', 'admin');
+('thoenhp@gmail.com', '$2b$10$z3YnTAVdqUoYSz8WZDbeVu8x31DyCyhGI1mivxb3VYWx2J.UF.hgq', 'thoenhp@gmail.com', 'admin'),
+('thoenhp1669', '$2b$10$ug2sByWvZ0onws4lakNBjuifAs7onzX4AiCgiTFEClkmKZb4L4t2q', 'thoenhp@gmail.com', 'admin');

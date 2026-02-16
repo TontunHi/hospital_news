@@ -48,6 +48,9 @@ exports.postUpload = async (req, res) => {
 
         if (allFiles.length > 0) {
             const fileValues = allFiles.map(f => {
+                // Fix for Thai filename encoding: Buffer the string as 'latin1' then decode as 'utf8'
+                f.originalname = Buffer.from(f.originalname, 'latin1').toString('utf8');
+                
                 const type = f.mimetype.includes('pdf') ? 'pdf' : 'image';
                 const dbPath = path.relative(path.join(__dirname, '..', 'uploads'), f.path).replace(/\\/g, '/');
                 return [newsId, path.join('uploads', dbPath), type, f.originalname];
@@ -111,6 +114,9 @@ exports.postUpdate = async (req, res) => {
 
         if (allNewFiles.length > 0) {
             const fileValues = allNewFiles.map(f => {
+                // Fix for Thai filename encoding: Buffer the string as 'latin1' then decode as 'utf8'
+                f.originalname = Buffer.from(f.originalname, 'latin1').toString('utf8');
+
                 const type = f.mimetype.includes('pdf') ? 'pdf' : 'image';
                 const dbPath = path.relative(path.join(__dirname, '..', 'uploads'), f.path).replace(/\\/g, '/');
                 return [newsId, path.join('uploads', dbPath), type, f.originalname];
