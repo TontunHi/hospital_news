@@ -9,8 +9,41 @@ const authRoutes = require('./routes/authRoutes');
 const newsRoutes = require('./routes/newsRoutes');
 const publicRoutes = require('./routes/publicRoutes');
 
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+
+if (!process.env.SESSION_SECRET) {
+    console.error('FATAL: SESSION_SECRET is not defined.');
+    process.exit(1);
+}
+
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Security Middleware
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "cdn.jsdelivr.net"],
+            scriptSrcAttr: ["'unsafe-inline'"],
+            styleSrc: ["'self'", "'unsafe-inline'", "cdn.jsdelivr.net", "fonts.googleapis.com"],
+            fontSrc: ["'self'", "cdn.jsdelivr.net", "fonts.gstatic.com"],
+            imgSrc: ["'self'", "data:", "blob:"],
+            frameSrc: ["'self'", "www.youtube.com"],
+            connectSrc: ["'self'", "cdn.jsdelivr.net"],
+        },
+    },
+}));
+
+// Rate Limiting for Auth Routes
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 10, // Limit each IP to 10 requests per windowMs
+    message: 'Too many login attempts, please try again later.'
+});
+app.use('/admin/login', authLimiter);
+app.use('/admin/verify-2fa', authLimiter);
 
 // Middlewares
 app.set('view engine', 'ejs');
@@ -21,10 +54,14 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cookieParser());
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'secret_key',
+    secret: process.env.SESSION_SECRET,
     resave: false,
-    saveUninitialized: true,
-    cookie: { maxAge: 1000 * 60 * 60 * 24 }
+    saveUninitialized: false, // Reduced from true to false for GDPR/security
+    cookie: { 
+        maxAge: 1000 * 60 * 60 * 24,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production' // Secure in production
+    }
 }));
 
 app.use((req, res, next) => {

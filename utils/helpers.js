@@ -1,7 +1,9 @@
 const createSlug = (title) => {
     if (!title) return '';
     let slug = title.trim();
-    slug = slug.replace(/[\s\/\(\)\?]+/g, '-');
+    // Replace all non-alphanumeric chars (except Thai) with -
+    slug = slug.replace(/[^\u0E00-\u0E7Fa-zA-Z0-9]+/g, '-');
+    slug = slug.replace(/-+/g, '-');
     slug = slug.replace(/^-+|-+$/g, '');
     return slug;
 };

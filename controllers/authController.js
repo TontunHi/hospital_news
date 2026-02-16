@@ -1,4 +1,4 @@
-const crypto = require('crypto');
+const bcrypt = require('bcrypt');
 const UserModel = require('../models/userModel');
 const transporter = require('../utils/mailer');
 
@@ -11,11 +11,12 @@ exports.postLogin = async (req, res) => {
     const { username, password } = req.body;
     try {
         const user = await UserModel.findByUsername(username);
-        if (!user) return res.render('admin/login', { error: 'ไม่พบชื่อผู้ใช้งาน' });
+        // Use generic error message to prevent username enumeration
+        if (!user) return res.render('admin/login', { error: 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง' });
 
-        const inputHash = crypto.createHash('sha256').update(password).digest('hex');
+        const match = await bcrypt.compare(password, user.password_hash);
         
-        if (inputHash === user.password_hash) {
+        if (match) {
             const otp = Math.floor(100000 + Math.random() * 900000).toString();
             
             req.session.tempUserId = user.id;
@@ -30,15 +31,15 @@ exports.postLogin = async (req, res) => {
             };
 
             await transporter.sendMail(mailOptions);
-            console.log(`OTP sent to ${user.email}: ${otp}`);
-
+            // OTP logging removed for security
+            
             res.redirect('/admin/verify-2fa');
         } else {
-            res.render('admin/login', { error: 'รหัสผ่านไม่ถูกต้อง' });
+            res.render('admin/login', { error: 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง' });
         }
     } catch (err) {
         console.error(err);
-        res.render('admin/login', { error: 'เกิดข้อผิดพลาดของระบบ: ' + err.message });
+        res.render('admin/login', { error: 'เกิดข้อผิดพลาดของระบบ' });
     }
 };
 

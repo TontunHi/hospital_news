@@ -1,0 +1,39 @@
+stages:
+  - build
+  - test
+  - deploy
+
+variables:
+  DOCKER_DRIVER: overlay2
+
+build:
+  stage: build
+  image: node:20
+  script:
+    - npm ci
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - node_modules/
+
+test:
+  stage: test
+  image: node:20
+  script:
+    - npm ci
+    - npm test
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - node_modules/
+    policy: pull
+
+docker-build:
+  stage: deploy
+  image: docker:24
+  services:
+    - docker:24-dind
+  script:
+    - docker build -t hospital-news:latest .
+  only:
+    - main

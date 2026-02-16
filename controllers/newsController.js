@@ -28,6 +28,8 @@ exports.getUpload = (req, res) => {
     res.render('admin/upload', { success: req.query.success });
 };
 
+const db = require('../db'); // Import db for getting connection
+
 exports.postUpload = async (req, res) => {
     const { title, category, youtube_link, start_date, end_date } = req.body;
     const imageFiles = req.files.images || [];
@@ -37,9 +39,12 @@ exports.postUpload = async (req, res) => {
     if (!title || !start_date || !end_date) return res.status(400).send('Missing fields.');
     const slug = createSlug(title);
 
+    let connection;
     try {
-        await NewsModel.beginTransaction();
-        const newsId = await NewsModel.createNews({ title, slug, category, youtube_link, start_date, end_date });
+        connection = await db.getConnection();
+        await connection.beginTransaction();
+
+        const newsId = await NewsModel.createNews({ title, slug, category, youtube_link, start_date, end_date }, connection);
 
         if (allFiles.length > 0) {
             const fileValues = allFiles.map(f => {
@@ -47,15 +52,17 @@ exports.postUpload = async (req, res) => {
                 const dbPath = path.relative(path.join(__dirname, '..', 'uploads'), f.path).replace(/\\/g, '/');
                 return [newsId, path.join('uploads', dbPath), type, f.originalname];
             });
-            await AttachmentModel.addAttachments(fileValues);
+            await AttachmentModel.addAttachments(fileValues, connection);
         }
-        await NewsModel.commit();
+        await connection.commit();
         res.redirect('/admin/news?success=upload');
     } catch (err) {
-        await NewsModel.rollback();
+        if (connection) await connection.rollback();
         console.error(err);
         allFiles.forEach(f => fs.unlink(f.path, () => { }));
-        res.status(500).send("Error uploading: " + err.message);
+        res.status(500).send("Server Error");
+    } finally {
+        if (connection) connection.release();
     }
 };
 
@@ -64,10 +71,14 @@ exports.getEdit = async (req, res) => {
         const news = await NewsModel.getNewsById(req.params.id);
         if (!news) return res.status(404).send('Not Found');
         const files = await AttachmentModel.getByNewsId(req.params.id);
-        news.start_date_local = moment(news.start_date).format('YYYY-MM-DD HH:mm');
-        news.end_date_local = moment(news.end_date).format('YYYY-MM-DD HH:mm');
+        
+        // Format dates for datetime-local input
+        news.start_date_local = moment(news.start_date).format('YYYY-MM-DDTHH:mm');
+        news.end_date_local = moment(news.end_date).format('YYYY-MM-DDTHH:mm');
+        
         res.render('admin/edit', { news: news, files: files });
     } catch (err) {
+        console.error(err);
         res.status(500).send('Error loading edit page');
     }
 };
@@ -80,14 +91,17 @@ exports.postUpdate = async (req, res) => {
     const allNewFiles = [...imageFiles, ...pdfFiles];
     const slug = createSlug(title);
 
+    let connection;
     try {
-        await NewsModel.beginTransaction();
-        await NewsModel.updateNews(newsId, { title, slug, category, youtube_link, start_date, end_date });
+        connection = await db.getConnection();
+        await connection.beginTransaction();
+
+        await NewsModel.updateNews(newsId, { title, slug, category, youtube_link, start_date, end_date }, connection);
 
         if (files_to_delete) {
             const idsToDelete = Array.isArray(files_to_delete) ? files_to_delete : [files_to_delete];
             const oldFiles = await AttachmentModel.getByIds(idsToDelete);
-            await AttachmentModel.deleteByIds(idsToDelete);
+            await AttachmentModel.deleteByIds(idsToDelete, connection);
 
             oldFiles.forEach(f => {
                 const fullPath = path.join(__dirname, '..', f.file_path);
@@ -101,15 +115,17 @@ exports.postUpdate = async (req, res) => {
                 const dbPath = path.relative(path.join(__dirname, '..', 'uploads'), f.path).replace(/\\/g, '/');
                 return [newsId, path.join('uploads', dbPath), type, f.originalname];
             });
-            await AttachmentModel.addAttachments(fileValues);
+            await AttachmentModel.addAttachments(fileValues, connection);
         }
-        await NewsModel.commit();
+        await connection.commit();
         res.redirect('/admin/news?success=update');
     } catch (err) {
-        await NewsModel.rollback();
+        if (connection) await connection.rollback();
         console.error(err);
         allNewFiles.forEach(f => fs.unlink(f.path, () => { }));
-        res.status(500).send("Error updating: " + err.message);
+        res.status(500).send("Server Error");
+    } finally {
+        if (connection) connection.release();
     }
 };
 

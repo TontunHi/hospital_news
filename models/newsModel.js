@@ -10,25 +10,28 @@ exports.getNewsById = async (id) => {
     return rows[0];
 };
 
-exports.createNews = async (data) => {
+exports.createNews = async (data, connection) => {
     const { title, slug, category, youtube_link, start_date, end_date } = data;
-    const [result] = await db.query(
+    const dbConn = connection || db;
+    const [result] = await dbConn.query(
         'INSERT INTO news (title, slug, category, youtube_link, start_date, end_date) VALUES (?, ?, ?, ?, ?, ?)',
         [title, slug, category, youtube_link, start_date, end_date]
     );
     return result.insertId;
 };
 
-exports.updateNews = async (id, data) => {
+exports.updateNews = async (id, data, connection) => {
     const { title, slug, category, youtube_link, start_date, end_date } = data;
-    await db.query(
+    const dbConn = connection || db;
+    await dbConn.query(
         'UPDATE news SET title = ?, slug = ?, category = ?, youtube_link = ?, start_date = ?, end_date = ? WHERE id = ?',
         [title, slug, category, youtube_link, start_date, end_date, id]
     );
 };
 
-exports.deleteNews = async (id) => {
-    await db.query('DELETE FROM news WHERE id = ?', [id]);
+exports.deleteNews = async (id, connection) => {
+    const dbConn = connection || db;
+    await dbConn.query('DELETE FROM news WHERE id = ?', [id]);
 };
 
 exports.incrementViewCount = async (id) => {
@@ -57,16 +60,4 @@ exports.getArchivedNews = async () => {
     `;
     const [rows] = await db.query(sql);
     return rows;
-};
-
-exports.beginTransaction = async () => {
-    await db.query('START TRANSACTION');
-};
-
-exports.commit = async () => {
-    await db.query('COMMIT');
-};
-
-exports.rollback = async () => {
-    await db.query('ROLLBACK');
 };
