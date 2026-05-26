@@ -259,3 +259,94 @@ header {
   padding: 3rem;
   border-top: 5px solid var(--primary-color);
 }
+
+/* --- Responsive Media Queries --- */
+
+@media (max-width: 991px) {
+  .login-wrapper {
+    min-height: auto;
+  }
+  .login-form-side {
+    padding: 3rem 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .topic-selection-center {
+    display: flex;
+    overflow-x: auto;
+    white-space: nowrap;
+    gap: 8px;
+    justify-content: flex-start;
+    padding-bottom: 12px;
+    margin: 20px 0;
+    scrollbar-width: none; /* Firefox */
+    -webkit-overflow-scrolling: touch;
+  }
+  .topic-selection-center::-webkit-scrollbar {
+    display: none; /* Safari and Chrome */
+  }
+  .topic-btn {
+    margin: 0;
+    padding: 8px 18px;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+  }
+  
+  .table-card {
+    border-radius: 8px;
+  }
+  
+  .table th, .table td {
+    font-size: 0.9rem;
+    padding: 10px 8px;
+  }
+}
+
+@media (max-width: 576px) {
+  header {
+    padding: 0.75rem 0;
+  }
+  
+  .brand-text {
+    font-size: 1.1rem;
+  }
+  
+  .brand-logo {
+    gap: 6px;
+  }
+  
+  .brand-logo img {
+    width: 28px !important;
+    height: 28px !important;
+  }
+  
+  .hero-section {
+    padding: 40px 15px;
+    border-radius: 0 0 20px 20px;
+    margin-bottom: 25px;
+  }
+  
+  .hero-section h1 {
+    font-size: 1.8rem !important;
+  }
+  
+  .hero-section p {
+    font-size: 0.95rem !important;
+  }
+  
+  .auth-card-body {
+    padding: 2rem 1.5rem;
+    border-radius: 16px;
+  }
+  
+  .pdf-viewer-container iframe {
+    height: 400px !important;
+  }
+}
+
+.fs-7 {
+  font-size: 0.75rem !important;
+}
+
+

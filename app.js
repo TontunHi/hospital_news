@@ -35,6 +35,7 @@ app.use(helmet({
             upgradeInsecureRequests: null, // Disable auto-upgrade to HTTPS
         },
     },
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
     strictTransportSecurity: false, // Disable HSTS for HTTP usage
     crossOriginOpenerPolicy: false, // Disable COOP to reduce noise/issues on IP access
 }));

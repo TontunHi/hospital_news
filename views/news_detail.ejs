@@ -26,11 +26,11 @@
             </a>
             
             <div class="d-flex gap-2">
-                <a href="/" class="btn btn-outline-secondary rounded-pill">
-                    <i class="bi bi-house-door-fill me-1"></i> หน้าแรก
+                <a href="/" class="btn btn-outline-secondary rounded-pill" title="หน้าแรก">
+                    <i class="bi bi-house-door-fill me-1"></i><span class="d-none d-sm-inline"> หน้าแรก</span>
                 </a>
-                <a href="/archive" class="btn btn-outline-secondary rounded-pill">
-                    <i class="bi bi-clock-history me-1"></i> ข่าวเก่า
+                <a href="/archive" class="btn btn-outline-secondary rounded-pill" title="ข่าวเก่า">
+                    <i class="bi bi-clock-history me-1"></i><span class="d-none d-sm-inline"> ข่าวเก่า</span>
                 </a>
             </div>
         </div>
@@ -76,14 +76,22 @@
                     <h5 class="fw-bold text-primary"><i class="bi bi-file-earmark-pdf-fill me-2"></i>เอกสารแนบ</h5>
                 </div>
                 <div class="card-body px-4 pb-4">
+                    <!-- Mobile helper notice -->
+                    <div class="alert alert-info d-flex align-items-center d-md-none border-0 shadow-sm rounded-3 mb-3">
+                        <i class="bi bi-info-circle-fill me-2 fs-5"></i>
+                        <div class="small">หากเอกสารไม่โหลดบนหน้าจอมือถือของคุณ สามารถกดปุ่มดาวน์โหลดหรือดูไฟล์โดยตรงด้านล่าง</div>
+                    </div>
                     <div class="pdf-viewer-container border rounded bg-white shadow-sm overflow-hidden position-relative">
                         <iframe src="/<%= pdfFile.file_path %>" style="width:100%; height:600px; border:none;"></iframe>
                     </div>
-                    <div class="mt-4 text-center">
-                        <a href="/<%= pdfFile.file_path %>" target="_blank" download="<%= pdfFile.original_name %>" 
-                           class="btn btn-primary px-5 py-2 shadow-sm rounded-2" 
-                           style="min-width: 300px; max-width: 100%;">
-                            <i class="bi bi-download me-2"></i>ดาวน์โหลด <%= pdfFile.original_name %> 
+                    <div class="mt-4 text-center d-flex flex-column flex-sm-row justify-content-center gap-2">
+                        <a href="/<%= pdfFile.file_path %>" target="_blank"
+                           class="btn btn-outline-primary px-4 py-2 shadow-sm rounded-pill flex-fill flex-sm-grow-0">
+                            <i class="bi bi-eye-fill me-2"></i>เปิดดูไฟล์โดยตรง
+                        </a>
+                        <a href="/<%= pdfFile.file_path %>" download="<%= pdfFile.original_name %>" 
+                           class="btn btn-primary px-4 py-2 shadow-sm rounded-pill text-white flex-fill flex-sm-grow-0">
+                            <i class="bi bi-download me-2"></i>ดาวน์โหลดเอกสาร
                         </a>
                     </div>
                 </div>
@@ -107,7 +115,7 @@
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-body p-0 overflow-hidden rounded">
                     <div class="ratio ratio-16x9">
-                        <iframe src="https://www.youtube.com/embed/<%= videoId %>" allowfullscreen></iframe>
+                        <iframe src="https://www.youtube.com/embed/<%= videoId %>" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
                     </div>
                 </div>
             </div>
@@ -117,9 +125,23 @@
     <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-centered">
             <div class="modal-content bg-transparent border-0">
-                <div class="modal-body text-center position-relative">
-                    <button type="button" class="btn-close btn-close-white position-absolute top-0 end-0 m-3" data-bs-dismiss="modal"></button>
-                    <img id="modalImage" src="" class="img-fluid rounded shadow-lg" style="max-height: 90vh;">
+                <div class="modal-body p-0 text-center position-relative d-flex align-items-center justify-content-between">
+                    <button type="button" class="btn-close btn-close-white position-absolute top-0 end-0 m-3" style="z-index: 1055;" data-bs-dismiss="modal"></button>
+                    
+                    <!-- Prev Button -->
+                    <button id="prevBtn" class="btn btn-dark btn-lg rounded-circle position-absolute start-0 m-3 opacity-75 hover-opacity-100 border-0 d-flex align-items-center justify-content-center" style="z-index: 1050; width: 48px; height: 48px; background-color: rgba(0,0,0,0.6);">
+                        <i class="bi bi-chevron-left fs-4 text-white"></i>
+                    </button>
+                    
+                    <div class="w-100 text-center px-4 py-3">
+                        <img id="modalImage" src="" class="img-fluid rounded shadow-lg" style="max-height: 85vh; object-fit: contain;">
+                        <div id="imageIndicator" class="text-white mt-2 small opacity-75 fw-bold"></div>
+                    </div>
+                    
+                    <!-- Next Button -->
+                    <button id="nextBtn" class="btn btn-dark btn-lg rounded-circle position-absolute end-0 m-3 opacity-75 hover-opacity-100 border-0 d-flex align-items-center justify-content-center" style="z-index: 1050; width: 48px; height: 48px; background-color: rgba(0,0,0,0.6);">
+                        <i class="bi bi-chevron-right fs-4 text-white"></i>
+                    </button>
                 </div>
             </div>
         </div>
@@ -127,10 +149,58 @@
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        document.querySelectorAll('.gallery-img').forEach(function(img) {
+        const imageElements = Array.from(document.querySelectorAll('.gallery-img'));
+        const imageUrls = imageElements.map(img => img.src);
+        let currentIndex = 0;
+        
+        const modalImage = document.getElementById('modalImage');
+        const imageIndicator = document.getElementById('imageIndicator');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        
+        function updateModalImage(index) {
+            currentIndex = index;
+            modalImage.src = imageUrls[currentIndex];
+            imageIndicator.textContent = `${currentIndex + 1} / ${imageUrls.length}`;
+            
+            if (imageUrls.length <= 1) {
+                prevBtn.style.setProperty('display', 'none', 'important');
+                nextBtn.style.setProperty('display', 'none', 'important');
+            } else {
+                prevBtn.style.setProperty('display', 'flex', 'important');
+                nextBtn.style.setProperty('display', 'flex', 'important');
+            }
+        }
+        
+        imageElements.forEach((img, index) => {
             img.addEventListener('click', function() {
-                document.getElementById('modalImage').src = this.src;
+                updateModalImage(index);
             });
+        });
+        
+        prevBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            let newIndex = currentIndex - 1;
+            if (newIndex < 0) newIndex = imageUrls.length - 1;
+            updateModalImage(newIndex);
+        });
+        
+        nextBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            let newIndex = currentIndex + 1;
+            if (newIndex >= imageUrls.length) newIndex = 0;
+            updateModalImage(newIndex);
+        });
+        
+        document.addEventListener('keydown', function(e) {
+            const modalEl = document.getElementById('imageModal');
+            if (modalEl && modalEl.classList.contains('show') && imageUrls.length > 1) {
+                if (e.key === 'ArrowLeft') {
+                    prevBtn.click();
+                } else if (e.key === 'ArrowRight') {
+                    nextBtn.click();
+                }
+            }
         });
     </script>
 </body>
